@@ -14,15 +14,19 @@ wynbench-agent/
 │   ├── registry.go    – Plugin interface + global registry (Register / Get)
 │   ├── store.go       – thread-safe in-memory ConnectionStore & WorkflowStore
 │   └── engine.go      – Engine: executes Actions and Workflows
+├── config/            – local JSON config persistence + export/import snapshot type
 ├── api/               – HTTP handlers
 │   ├── server.go      – Server struct + route registration
 │   ├── connections.go – POST/GET/DELETE /connections
 │   ├── actions.go     – POST /actions/execute
-│   └── workflows.go   – POST /workflows/run
+│   ├── workflows.go   – workflow CRUD + POST /workflows/run
+│   ├── kafka.go       – read-only Kafka helper endpoints
+│   ├── config.go      – config export/import endpoints
+│   └── health.go      – GET /health
 └── plugins/
     ├── http/          – HTTP GET/POST protocol plugin
+    ├── kafka/         – Kafka produce/list/read protocol plugin
     └── sql/           – SQL stub protocol plugin
-```
 
 ### Plugin Interface
 
@@ -131,7 +135,8 @@ go test ./...
 
 ## Built-in Plugins
 
-| Name   | Status      | Notes                                              |
-|--------|-------------|----------------------------------------------------|
-| `http` | Functional  | Basic HTTP GET/POST; params: `url`, `method`, `body` |
-| `sql`  | Stub        | Validates params, returns stub rows; no real DB   |
+| Name    | Status      | Notes                                                                  |
+|---------|-------------|------------------------------------------------------------------------|
+| `http`  | Functional  | Basic HTTP GET/POST; params: `url`, `method`, `body`                   |
+| `kafka` | Functional  | Produce/list/read helpers; params include `brokers`, `topic`, `value`  |
+| `sql`   | Stub        | Validates params, returns stub rows; no real DB                        |

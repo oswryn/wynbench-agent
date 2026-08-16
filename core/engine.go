@@ -20,11 +20,7 @@ func NewEngine(cs *ConnectionStore) *Engine {
 // corresponding Connection's Config into a.Params, and delegates to
 // Plugin.Execute.
 func (e *Engine) ExecuteAction(a Action) (Result, error) {
-	plugin, ok := Get(a.Plugin)
-	if !ok {
-		return Result{Success: false, Error: fmt.Sprintf("unknown plugin %q", a.Plugin)},
-			fmt.Errorf("unknown plugin %q", a.Plugin)
-	}
+	pluginName := a.Plugin
 
 	// Merge connection config into params when a ConnectionID is provided.
 	if a.ConnectionID != "" {
@@ -33,6 +29,18 @@ func (e *Engine) ExecuteAction(a Action) (Result, error) {
 			return Result{Success: false, Error: fmt.Sprintf("connection %q not found", a.ConnectionID)},
 				fmt.Errorf("connection %q not found", a.ConnectionID)
 		}
+
+		if pluginName == "" {
+			pluginName = conn.Protocol
+			a.Plugin = pluginName
+		} else if conn.Protocol != "" && conn.Protocol != pluginName {
+			return Result{
+					Success: false,
+					Error:   fmt.Sprintf("connection %q uses protocol %q, but action requested plugin %q", a.ConnectionID, conn.Protocol, pluginName),
+				},
+				fmt.Errorf("connection %q uses protocol %q, but action requested plugin %q", a.ConnectionID, conn.Protocol, pluginName)
+		}
+
 		merged := make(map[string]any, len(conn.Config)+len(a.Params))
 		for k, v := range conn.Config {
 			merged[k] = v
@@ -42,6 +50,12 @@ func (e *Engine) ExecuteAction(a Action) (Result, error) {
 			merged[k] = v
 		}
 		a.Params = merged
+	}
+
+	plugin, ok := Get(pluginName)
+	if !ok {
+		return Result{Success: false, Error: fmt.Sprintf("unknown plugin %q", pluginName)},
+			fmt.Errorf("unknown plugin %q", pluginName)
 	}
 
 	return plugin.Execute(a)

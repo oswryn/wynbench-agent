@@ -194,13 +194,18 @@ func (p *Plugin) produceMessage(action core.Action) (core.Result, error) {
 		return core.Result{Success: false, Error: "missing param: topic"}, nil
 	}
 
-	valueBytes, err := marshalActionValue(action.Params["value"])
+	rawValue, ok := action.Params["value"]
+	if !ok || rawValue == nil {
+		return core.Result{Success: false, Error: "missing param: value"}, nil
+	}
+
+	valueBytes, err := marshalActionValue(rawValue)
 	if err != nil {
 		return core.Result{Success: false, Error: err.Error()}, nil
 	}
 
 	if schema, ok := stringParam(action.Params, "avro_schema"); ok {
-		valueBytes, err = encodeAvroValue(schema, action.Params["value"])
+		valueBytes, err = encodeAvroValue(schema, rawValue)
 		if err != nil {
 			return core.Result{Success: false, Error: err.Error()}, nil
 		}

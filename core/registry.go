@@ -6,7 +6,7 @@ import "fmt"
 // Plugin is the interface that all protocol modules must implement.
 //
 //	Name()      – returns the unique protocol identifier (e.g. "http", "sql").
-//	Configure() – receives connection-level settings; called once at load time.
+//	Configure() – optional hook for validating/preparing connection-level settings (invoked by callers as needed).
 //	Execute()   – runs a single Action and returns a Result.
 type Plugin interface {
 	Name() string
