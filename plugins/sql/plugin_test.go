@@ -21,7 +21,7 @@ func TestSQLPlugin_Configure(t *testing.T) {
 	}
 }
 
-func TestSQLPlugin_Execute_OK(t *testing.T) {
+func TestSQLPlugin_Execute_MissingConnectionString(t *testing.T) {
 	p := sqlplugin.New()
 	result, err := p.Execute(core.Action{
 		Plugin: "sql",
@@ -30,11 +30,8 @@ func TestSQLPlugin_Execute_OK(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !result.Success {
-		t.Fatalf("expected success, got: %s", result.Error)
-	}
-	if result.Data["message"] == nil {
-		t.Fatal("expected message in result data")
+	if result.Success {
+		t.Fatal("expected failure when connection string is missing")
 	}
 }
 
@@ -43,5 +40,17 @@ func TestSQLPlugin_Execute_MissingQuery(t *testing.T) {
 	result, _ := p.Execute(core.Action{Plugin: "sql", Params: map[string]any{}})
 	if result.Success {
 		t.Fatal("expected failure when query param is missing")
+	}
+}
+
+func TestSQLPlugin_Execute_UnsupportedDBType(t *testing.T) {
+	p := sqlplugin.New()
+	result, _ := p.Execute(core.Action{Plugin: "sql", Params: map[string]any{
+		"query":            "SELECT 1",
+		"connectionString": "postgres://localhost/test",
+		"db_type":          "sqlite",
+	}})
+	if result.Success {
+		t.Fatal("expected failure when db_type is unsupported")
 	}
 }
